@@ -65,10 +65,10 @@ class Utils():
         config = configparser.ConfigParser()
         config.read(os.path.join(self.cwd,__conf_fname__))
 
-        self.rezHome = config.get("CWDS","REZAWARE")
+        self.rezHome = config.get("CWDS","PROJECT")
         sys.path.insert(1,self.rezHome)
         ''' innitialize the logger '''
-        from rezaware import Logger as logs
+        from rezaware.utils import Logger as logs
         logger = logs.get_logger(
             cwd=self.rezHome,
             app=self.__app__, 
@@ -78,10 +78,10 @@ class Utils():
 
         ''' set a new logger section '''
         logger.info('########################################################')
-        logger.info(self.__name__)
+        logger.info("%s %s",self.__name__,self.__package__)
 #         logger.info('Module Path = %s', self.pckgDir)
         ''' initialize file read/write '''
-        from utils.modules.etl.load import sparkFILEwls as spark
+        from rezaware.modules.etl.loader import sparkFILEwls as spark
         clsFile = spark.FileWorkLoads(desc="ota property price scraper")
         clsFile.storeMode=config.get("DATASTORE","MODE")
         clsFile.storeRoot=config.get("DATASTORE","ROOT")

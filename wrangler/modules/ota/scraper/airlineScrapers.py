@@ -67,15 +67,15 @@ class AirlineScraper():
 
         self.cwd=os.path.dirname(__file__)
         sys.path.insert(1,self.cwd)
-        import scraperUtils as otasu
-        clsUtil = otasu.Utils(desc='Inheriting Utilities class for airline itinerary scraping')
+        from wrangler.modules.ota.scraper import scraperUtils as otasu
+        clsUtil = otasu.Utils(desc=self.__desc__)
 
         config = configparser.ConfigParser()
         config.read(os.path.join(self.cwd,__ini_fname__))
 
-        self.rezHome = config.get("CWDS","REZAWARE")
+        self.rezHome = config.get("CWDS","PROJECT")
         sys.path.insert(1,self.rezHome)
-        from rezaware import Logger as logs
+        from rezaware.utils import Logger as logs
         ''' innitialize the logger '''
         logger = logs.get_logger(
             cwd=self.rezHome,
@@ -85,10 +85,12 @@ class AirlineScraper():
             ini_file=self.__ini_fname__)
         ''' set a new logger section '''
         logger.info('########################################################')
-        logger.info(self.__name__,self.__package__)
+        logger.info("%s %s",self.__name__,self.__package__)
 
-        from utils.modules.etl.load import sparkwls as spark
-        clsSparkWL = spark.SparkWorkLoads(desc="ota property price scraper")
+#         from utils.modules.etl.load import sparkwls as spark
+#         clsSparkWL = spark.SparkWorkLoads(desc="ota property price scraper")
+        from rezaware.modules.etl.loader import sparkFILEwls as spark
+        clsSparkWL = spark.FileWorkLoads(desc=self.__desc__)
 
         ''' Set the wrangler root directory '''
         self.pckgDir = config.get("CWDS",self.__package__)

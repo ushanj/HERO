@@ -85,12 +85,12 @@ class PropertyScraper():
         config = configparser.ConfigParser()
         config.read(os.path.join(self.cwd,__ini_fname__))
 
-        self.rezHome = config.get("CWDS","REZAWARE")
+        self.rezHome = config.get("CWDS","PROJECT")
         sys.path.insert(1,self.rezHome)
         
-        from utils.modules.etl.load import sparkFILEwls as spark
+        from rezaware.modules.etl.loader import sparkFILEwls as spark
 #         from utils.modules.etl.load import sparkwls as spark
-        from utils.modules.ml.natlang import nlp
+        from rezaware.modules.ml.natlang import nlp
         ''' initialize util class to use common functions '''
         clsUtil = otasu.Utils(desc=self.__desc__)
         clsNLP = nlp.NatLanWorkLoads(desc=self.__desc__)
@@ -110,7 +110,7 @@ class PropertyScraper():
 #         self.dataDir = os.path.join(config.get("CWDS","DATA"),__booking_data_ext__)
 #         self.dataDir = os.path.join(self.storePath,__booking_data_ext__)
 
-        from rezaware import Logger as logs
+        from rezaware.utils import Logger as logs
         ''' innitialize the logger '''
         logger = logs.get_logger(
             cwd=self.rezHome,
