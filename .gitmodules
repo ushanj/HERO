@@ -1,0 +1,3 @@
+[submodule "rezaware"]
+	path = rezaware
+	url = https://github.com/waidyanatha/rezaware.git
