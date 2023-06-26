@@ -18,6 +18,8 @@ try:
     import logging
     import traceback
     import functools
+    
+    import boto3
     ''' function specific python packages '''
     import pandas as pd
     import numpy as np
@@ -25,6 +27,8 @@ try:
     ''' pyspark packages '''
     from pyspark.sql import functions as F
     from pyspark.sql import DataFrame
+    
+    from pyspark.sql import SparkSession
 
     print("All functional %s-libraries in %s-package of %s-module imported successfully!"
           % (__name__.upper(),__package__.upper(),__module__.upper()))
@@ -395,3 +399,44 @@ class PropertySearches():
             print("[Error]"+__s_fn_id__, err)
 
         return self._bow
+
+
+    def read_rooms_data(bucket_name, folder_path):
+        s3 = boto3.client('s3')
+
+        # List all objects in the specified S3 folder
+        response = s3.list_objects_v2(Bucket=bucket_name, Prefix=folder_path)
+
+        csv_files = []
+        for obj in response['Contents']:
+            file_key = obj['Key']
+            if file_key.endswith('.csv'):
+                # Download each CSV file to a local temporary file
+                temp_file = '/tmp/' + file_key
+                s3.download_file(bucket_name, file_key, temp_file)
+                csv_files.append(temp_file)
+
+        # Merge CSV files into a single DataFrame
+        dfs = []
+        for csv_file in csv_files:
+            df = pd.read_csv(csv_file)
+            dfs.append(df)
+
+        merged_df = pd.concat(dfs, ignore_index=True)
+
+        return merged_df    
+    
+
+    def read_rooms_data_spark(bucket_name, folder_path):
+        spark = SparkSession.builder \
+            .appName("Read and Merge CSV Files") \
+            .getOrCreate()
+
+        # Configure S3 credentials
+        spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.access.key", "your_access_key")
+        spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.secret.key", "your_secret_key")
+
+        # Read CSV files into a DataFrame
+        merged_df = spark.read.csv(f"s3a://{bucket_name}/{folder_path}/*.csv", header=True, inferSchema=True)
+
+        return merged_df
