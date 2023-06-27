@@ -401,42 +401,46 @@ class PropertySearches():
         return self._bow
 
 
-    def read_rooms_data(bucket_name, folder_path):
-        s3 = boto3.client('s3')
-
-        # List all objects in the specified S3 folder
-        response = s3.list_objects_v2(Bucket=bucket_name, Prefix=folder_path)
-
-        csv_files = []
-        for obj in response['Contents']:
-            file_key = obj['Key']
-            if file_key.endswith('.csv'):
-                # Download each CSV file to a local temporary file
-                temp_file = '/tmp/' + file_key
-                s3.download_file(bucket_name, file_key, temp_file)
-                csv_files.append(temp_file)
-
-        # Merge CSV files into a single DataFrame
-        dfs = []
-        for csv_file in csv_files:
-            df = pd.read_csv(csv_file)
-            dfs.append(df)
-
-        merged_df = pd.concat(dfs, ignore_index=True)
-
-        return merged_df    
     
+    def read_rooms_data(store_mode, bucket_name , folder_path, **kwargs):
 
-    def read_rooms_data_spark(bucket_name, folder_path):
-        spark = SparkSession.builder \
-            .appName("Read and Merge CSV Files") \
-            .getOrCreate()
+        from utils.modules.etl.loader import sparkFILEwls as spark
 
-        # Configure S3 credentials
-        spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.access.key", "your_access_key")
-        spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.secret.key", "your_secret_key")
+        __desc__ = "read and write files from and to a particular source"
+        clsSpark = spark.FileWorkLoads(desc=__desc__)
+        clsSpark.storeMode = store_mode
 
-        # Read CSV files into a DataFrame
-        merged_df = spark.read.csv(f"s3a://{bucket_name}/{folder_path}/*.csv", header=True, inferSchema=True)
+        ''' set the driver '''
+        if clsSpark.storeMode.lower() == "local-fs":
+            clsSpark.jarDir = "/opt/spark/jars/postgresql-42.5.0.jar"
+        elif clsSpark.storeMode.lower() == "aws-s3-bucket":
+            clsSpark.jarDir = "/opt/spark/jars/aws-java-sdk-s3-1.12.376.jar"
+        elif clsSpark.storeMode.lower() == "google-storage":
+            clsSpark.jarDir = "/opt/spark/jars/gcs-connector-hadoop3-2.2.10.jar"
+        else:
+            pass
+        #print("jar =",clsSpark.jarDir)
 
-        return merged_df
+        clsSpark.storeRoot = bucket_name
+
+        __as_type__ = "spark"
+        __aws_folder_path__ = folder_path
+        __file_type__ = "csv" 
+
+
+        options = {
+            "inferSchema":True,
+            "header":True,
+            "delimiter":",",
+        }
+
+        _data = clsSpark.read_files_to_dtype(
+            as_type=__as_type__,
+            folder_path=__aws_folder_path__,
+            file_name=None,#__local_file_name__,
+            file_type=__file_type__,
+            **options,
+        )
+
+
+        return _data 
