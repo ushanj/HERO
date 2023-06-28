@@ -1,8 +1,7 @@
-# HERO - Hospitality Enterprise Revenue Optimizer
+# HERO
 
-<img align="left" width="80" height="80" src="./img/hero_logo.png">
-
-HERO builds on the [rezaware](https://github.com/waidyanatha/rezaware/wiki) platform and is inherited as a submodule. The README file is intended for Rezgateway affiilates working on the HERO project. It povides an introduction to getting started with the available tools and code. Thereafter, refer to the WIKI for complete documentation on the system's components, and interfaces. 
+<img align="left" width="80" height="80" src="./img/hero_icon.png">
+Hospitality Enterprise Revenue Optimizer (HERO) builds on the [rezaware](https://github.com/waidyanatha/rezaware/wiki) platform and is inherited as a submodule. The README file is intended for Rezgateway affiilates working on the HERO project. It povides an introduction to getting started with the available tools and code. Thereafter, refer to the WIKI for complete documentation on the system's components, and interfaces. 
 
 ## Introduction
 
