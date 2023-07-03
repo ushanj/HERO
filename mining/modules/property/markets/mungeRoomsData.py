@@ -402,27 +402,11 @@ class PropertySearches():
 
 
     def read_rooms_data(self, 
-        folder_path: str,   # mandetory relative folder path to parent directory 
-        files_list : list=[],  # specific list of files to read the data
+        bucket_name : str,                
+        folder_path: str,   
         **kwargs,
-        ):
-        """
-        Description:
-            Read and filter data from the historic database (archives); specifically the
-            AWS-S3 cold storage. 
-            * If the file names are specified then the data for the specific files are retrieved
-            * If no file list is given then all 'csv' files in folder and child folders are read
-        Attributes :
-            folder_path (str)- madatory; relative folder path
-            file_list (list) - optional; specific a list of files to read the data
-            kwargs (dict) - optional; 
-                'CASCADE' (Bool) - default is 'True', if set to false will only read files in the
-                    parent folder path
-        Return(s) :
-            self._data (DataFrame) with data in 
-        Exceptions:
-            If file_path is None or empty, abort
-        """
+    ):
+       
 
         __s_fn_id__ = f"{self.__name__} function <read_rooms_data>"
 
@@ -439,12 +423,18 @@ class PropertySearches():
             "inferSchema":True,
             "header":True,
             "delimiter":",",
-            "pathGlobFilter":'*.csv',
-            "recursiveFileLookup":True,}
+            "quote":'"',
+            "escape": '"',
+            "mode":"PERMISSIVE",
+            "charset":"UTF-8",
+            }
 
 
         try:
             ''' validate input attributes '''
+            if not isinstance(bucket_name,str) :
+                raise AttributeError("Invalid S3 Bucket Name")
+
             if not isinstance(folder_path,str) or "".join(folder_path.split())=="":
                 raise AttributeError("Invalid folder path")
 
@@ -455,34 +445,16 @@ class PropertySearches():
                 options['header']=kwargs['header']
             if "delimiter" in kwargs.keys():
                 options['delimiter']=kwargs['delimiter']
-            if "pathGlobFilter" in kwargs.keys():
-                options['pathGlobFilter']=kwargs['pathGlobFilter']
-            if "recursiveFileLookup" in kwargs.keys():
-                options['recursiveFileLookup']=kwargs['recursiveFileLookup']
-            
-            
-            if isinstance(files_list,list) and len(files_list)>0:
-                ''' loop through file list and append data to DataFrame '''
-                self._data = spark.createDataFrame([])
-                for _file in files_list:
-                    try:
- 
-                        _prop_data = clsSFile.read_csv_to_sdf(
-                            file_path = str(folder_path) +"/"+str(_file),
-                            **kwargs,
-                        )
-                        
-                        if not isinstance(_prop_data,DataFrame) or _prop_data.shape[0]<=0:
-                            raise AttributeError("%s in %s had errors; read_data returned "+\
-                                                 "%s empty dataframe" 
-                                                 % (_file.upper(),folder_path.upper(),type(_prop_data)))
+            if "quote" in kwargs.keys():
+                options['quote']=kwargs['quote']
+            if "escape" in kwargs.keys():
+                options['escape']=kwargs['escape']
+            if "mode" in kwargs.keys():
+                options['mode']=kwargs['mode']   
+            if "charset" in kwargs.keys():
+                options['charset']=kwargs['charset']        
+         
 
-                        logger.debug("%s concatenating file %s returned %d data rows and %d columns",
-                                      __s_fn_id__, _file.upper(), _prop_data.count() , len(_prop_data.columns))
-                                        
-                        self._data = self._data.union(_prop_data)    
-                    except Exception as file_err:
-                        logger.warning("%s %s",__s_fn_id__,file_err)
 
             elif "CASCADE" in kwargs.keys() and not kwargs['CASCADE']:
                 ''' read all files from only the parent folder '''
@@ -490,14 +462,14 @@ class PropertySearches():
 
             else:
                 ''' read all csv files from parent and child folders '''
-                _prop_data = clsSFile.read_csv_to_sdf(
+                _data = clsSFile.read_csv_to_sdf(
                             file_path = folder_path
                             **kwargs,
                         )
-                if not isinstance(_prop_data,DataFrame) or _prop_data.shape[0]<=0:
+                if not isinstance(_data,DataFrame) or _data.shape[0]<=0:
                     raise AttributeError("Files in %s had errors; read_data returned %s empty dataframe" 
-                                         % (folder_path.upper(),type(_prop_data)))
-                self._data = _prop_data
+                                         % (folder_path.upper(),type(_data)))
+                
                 
             if not isinstance(self._data,DataFrame) or self._data.shape[0]<=0:
                 raise RuntimeError("No data retrieved from %s; process returned %s dataframe",
@@ -512,3 +484,4 @@ class PropertySearches():
             print("[Error]"+__s_fn_id__, err)
 
         return self._data
+        
